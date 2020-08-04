@@ -18,14 +18,14 @@ public class JuiceShopSteps extends BaseSteps {
 
   @Step
   public static void getBasketContent(){
-    sendRequest(GET, "INSERT MISSING ENDPOINT HERE" + sessionVariableCalled("basket_id"));
+    sendRequest(GET, "/rest/basket/" + sessionVariableCalled("basket_id"));
   }
 
   @Step
   public static void addItemToBasket(DataTable dataTable) throws IOException {
     BaseRequestBody requestBody = createBodyCustom(dataTable);
     requestBody.addKey("BasketId", sessionVariableCalled("basket_id").toString());
-    sendRequestWithBodyJson(POST, "INSERT MISSING ENDPOINT HERE", requestBody.getBody());
+    sendRequestWithBodyJson(POST, "/api/BasketItems/", requestBody.getBody());
   }
 
   @Step
@@ -64,21 +64,55 @@ public class JuiceShopSteps extends BaseSteps {
 
   @Step
   public static void resetPassword(DataTable dataTable) throws IOException {
-    sendRequestWithBodyJson(POST, "INSERT MISSING ENDPOINT HERE", createBody(handleRandomEmail(dataTable)));
+    sendRequestWithBodyJson(POST, "/rest/user/reset-password", createBody(handleRandomEmail(dataTable)));
   }
 
   @Step
   public static void purchaseTheItems(DataTable dataTable) throws IOException {
     BaseRequestBody requestBody = createBodyCustom(dataTable);
+
     // Add payment id
-    requestBody.addKey("orderDetails --> paymentId", sessionVariableCalled("???????").toString());
+    requestBody.addKey("orderDetails --> paymentId", sessionVariableCalled("payment_id").toString());
     // Add address id
-    requestBody.addKey("orderDetails --> addressId", sessionVariableCalled("????????").toString());
+    requestBody.addKey("orderDetails --> addressId", sessionVariableCalled("address_id").toString());
     sendRequestWithBodyJson(
             POST,
             // Add basket id
-            createBasketCheckoutEndpoint(sessionVariableCalled("????????").toString()),
+            createBasketCheckoutEndpoint(sessionVariableCalled("basket_id").toString()),
             requestBody.getBody());
+  }
+
+  @Step
+  public static void userRequestsErasure(DataTable dataTable) throws IOException {
+    sendRequestWithBodyJson(POST, "/rest/user/erasure-request", createBody(handleRandomEmail(dataTable)));
+  }
+
+  @Step
+  public static void userAddsAnAddress(DataTable dataTable) throws IOException {
+    sendRequestWithBodyJson(POST, "/api/Addresss/", createBody(dataTable));
+    if (((Response) sessionVariableCalled(RESPONSE)).statusCode() == 201) {
+      saveValueInPathToSessionVariable("data --> id", "address_id");
+      saveValueInPathToSessionVariable("data --> id", "payment_id");
+    }
+  }
+
+  @Step
+  public static void userRequestsDeliveryOptions() throws IOException {
+    sendRequestWithBodyJson(GET, "/api/Deliverys", "{}");
+  }
+
+  @Step
+  public static void userAddsACreditCard(DataTable dataTable) throws IOException {
+    sendRequestWithBodyJson(POST, "/api/Cards/", createBody(dataTable));
+  }
+
+  @Step
+  public static void userSendsSecurityAnswer(DataTable dataTable) throws IOException {
+    BaseRequestBody requestBody = createBodyCustom(dataTable);
+    // Adding user_id
+    requestBody.addKey("UserId", sessionVariableCalled("user_id").toString());
+
+    sendRequestWithBodyJson(POST, "/api/SecurityAnswers/", requestBody.getBody());
   }
 
   // Private
